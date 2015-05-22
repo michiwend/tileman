@@ -58,7 +58,7 @@ func genSequence(start, end time.Time, region, resolution int) []string {
 	return out
 }
 
-func downloadSequence(start, end time.Time, region, resolution int, dir string) error {
+func downloadSequence(start, end time.Time, region, resolution int, dir string, ffmpeg bool) error {
 
 	err := os.Mkdir(dir, 0775)
 	if err != nil {
@@ -83,7 +83,14 @@ func downloadSequence(start, end time.Time, region, resolution int, dir string) 
 			return err
 		}
 
-		f, err := os.Create(path.Join(dir, strconv.Itoa(i)+"_"+img))
+		var filename string
+		if ffmpeg {
+			filename = path.Join(dir, fmt.Sprintf("%05d.png", i))
+		} else {
+			filename = path.Join(dir, strconv.Itoa(i)+"_"+img)
+		}
+
+		f, err := os.Create(filename)
 		if err != nil {
 			return err
 		}
@@ -109,6 +116,8 @@ func main() {
 
 	var resolution = flag.Int("res", 5, "Time resolution. Use a multiple of 5, minimum 5!")
 
+	var ffmpeg = flag.Bool("ffmpeg-out", false, "Generate files in the form 00001.png")
+
 	flag.Parse()
 
 	if *resolution < 5 || *resolution%5 != 0 {
@@ -129,7 +138,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = downloadSequence(start, end, region, *resolution, *outputDir)
+	fmt.Println(*outputDir)
+
+	err = downloadSequence(start, end, region, *resolution, *outputDir, *ffmpeg)
 	if err != nil {
 		log.Fatal(err)
 	}
