@@ -38,10 +38,10 @@ var regions = map[string]int{
 
 var baseUrl = "http://kachelmannwetter.com/images/data/cache/"
 
-func genSequence(start, end time.Time, region int) []string {
+func genSequence(start, end time.Time, region, resolution int) []string {
 
-	start = start.Round(time.Minute * resolution)
-	end = end.Round(time.Minute * resolution) //FIXME set limit (now-limit)
+	start = start.Round(time.Minute * time.Duration(resolution))
+	end = end.Round(time.Minute * time.Duration(resolution)) //FIXME set limit (now-limit)
 
 	steps := int(end.Sub(start).Minutes()) / resolution
 
@@ -51,21 +51,21 @@ func genSequence(start, end time.Time, region int) []string {
 	for i := 0; i <= steps; i++ {
 
 		out[i] = fmt.Sprintf("download_px250_%s_%d_%s.png", t.Format("2006_01_02"), region, t.Format("1504"))
-		t = t.Add(resolution * time.Minute)
+		t = t.Add(time.Duration(resolution) * time.Minute)
 
 	}
 
 	return out
 }
 
-func downloadSequence(start, end time.Time, region int, dir string) error {
+func downloadSequence(start, end time.Time, region, resolution int, dir string) error {
 
 	err := os.Mkdir(dir, 0775)
 	if err != nil {
 		return err
 	}
 
-	for i, img := range genSequence(start, end, region) {
+	for i, img := range genSequence(start, end, region, resolution) {
 
 		log.WithField("Name", img).Info("Downloading image...")
 
@@ -129,7 +129,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = downloadSequence(start, end, region, *outputDir)
+	err = downloadSequence(start, end, region, *resolution, *outputDir)
 	if err != nil {
 		log.Fatal(err)
 	}
