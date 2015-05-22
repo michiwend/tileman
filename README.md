@@ -1,7 +1,7 @@
 # tileman
 Download weather radar images from kachelmannwetter.com
 
-# Usage
+## Usage
 type `tileman -help` to get the following list
 
 Flag        | Description                                      | Default
@@ -15,6 +15,7 @@ Flag        | Description                                      | Default
 -start-time | Start time in the form "15:04"                   | 2 hours ago
 -ffmpeg-out | Generate files in the form 00001.png             | false
 
+### Create a video with ffmpeg
 If you want to create a video, you can use `-ffmpeg-out=true` to have
 numbered filenames and afterwards let ffmpeg do the job:
 ```
