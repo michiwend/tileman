@@ -31,10 +31,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-const (
-	resolution = 5 // min=5
-)
-
 var regions = map[string]int{
 	"germany": 2,
 	"bavaria": 38,
