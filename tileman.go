@@ -101,7 +101,7 @@ func main() {
 	var endDateString = flag.String("end-date", time.Now().Format("2006-01-02"), `End date in the form "2006-01-20", default is today.`)
 
 	var startTimeString = flag.String("start-time", time.Now().Add(time.Hour*-2).Format("15:04"), `Start time in the form "15:04", default is 2 hours ago.`)
-	var endTimeString = flag.String("end-time", time.Now().Add(time.Minute*-15).Format("15:04"), `Start time in the form "15:04", default is 15 minutes ago.`)
+	var endTimeString = flag.String("end-time", time.Now().Add(time.Minute*-15).Format("15:04"), `End time in the form "15:04", default is 15 minutes ago.`)
 
 	var outputDir = flag.String("dir", "./tileman_out", "Directory for saving the results.")
 
