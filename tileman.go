@@ -32,8 +32,10 @@ import (
 )
 
 var regions = map[string]int{
-	"germany": 2,
-	"bavaria": 38,
+	"deutschland":      2,
+	"badenwürttemberg": 37,
+	"bayern":           38,
+	"augsburg":         339,
 }
 
 var baseUrl = "http://kachelmannwetter.com/images/data/cache/"
@@ -157,11 +159,8 @@ func main() {
 
 	var lastHours = flag.Int("hours", 0, "Use instead of start-date/time to get the last hours.")
 	var outputDir = flag.String("dir", "./tileman_out", "Directory for saving the results.")
-
 	var regionString = flag.String("region", "germany", "Which region map to use?")
-
 	var resolution = flag.Int("res", 5, "Time resolution. Use a multiple of 5, minimum 5!")
-
 	var ffmpeg = flag.Bool("ffmpeg-out", false, "Generate files in the form 00001.png")
 	var maxRequests = flag.Int("max-requests", 10, "Maximum of parallel http requests")
 
@@ -190,8 +189,6 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	fmt.Println(*outputDir)
 
 	now := time.Now()
 	downloadSequence(start, end, region, *resolution, *outputDir, *ffmpeg, *maxRequests)
