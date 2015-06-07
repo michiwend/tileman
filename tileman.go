@@ -155,6 +155,7 @@ func main() {
 	var startTimeString = flag.String("start-time", time.Now().Add(time.Hour*-2).Format("15:04"), `Start time in the form "15:04", default is 2 hours ago.`)
 	var endTimeString = flag.String("end-time", time.Now().Add(time.Minute*-15).Format("15:04"), `End time in the form "15:04", default is 15 minutes ago.`)
 
+	var lastHours = flag.Int("hours", 0, "Use instead of start-date/time to get the last hours.")
 	var outputDir = flag.String("dir", "./tileman_out", "Directory for saving the results.")
 
 	var regionString = flag.String("region", "germany", "Which region map to use?")
@@ -175,9 +176,15 @@ func main() {
 		log.Fatal("Region not (yet) defined: " + *regionString)
 	}
 
-	start, err := time.Parse("2006-01-0215:04", *startDateString+*startTimeString)
-	if err != nil {
-		log.Fatal(err)
+	var start time.Time
+	if *lastHours > 0 {
+		start = time.Now().Add(time.Duration(-*lastHours) * time.Hour).UTC()
+	} else {
+		var err error
+		start, err = time.Parse("2006-01-0215:04", *startDateString+*startTimeString)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 	end, err := time.Parse("2006-01-0215:04", *endDateString+*endTimeString)
 	if err != nil {
