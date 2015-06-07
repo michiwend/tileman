@@ -58,48 +58,93 @@ func genSequence(start, end time.Time, region, resolution int) []string {
 	return out
 }
 
-func downloadSequence(start, end time.Time, region, resolution int, dir string, ffmpeg bool) error {
+type LimitedWaitGroup struct {
+	limit     int
+	count     int
+	countChan chan int
+}
+
+func NewLimitedWaitGroup(limit int) *LimitedWaitGroup {
+	wg := LimitedWaitGroup{limit: limit}
+	wg.countChan = make(chan int)
+	return &wg
+}
+
+func (wg *LimitedWaitGroup) Add(delta int) {
+	if delta > wg.limit {
+		panic("delta higher then limit")
+	}
+	if wg.count+delta > wg.limit {
+		for <-wg.countChan+delta > wg.limit {
+		}
+	}
+	wg.count += delta
+}
+
+func (wg *LimitedWaitGroup) Done() {
+	wg.count--
+	wg.countChan <- wg.count
+}
+
+func (wg *LimitedWaitGroup) Wait() {
+	for <-wg.countChan > 0 {
+	}
+	close(wg.countChan)
+}
+
+func downloadSequence(start, end time.Time, region, resolution int, dir string, ffmpeg bool, maxRequests int) {
 
 	err := os.Mkdir(dir, 0775)
 	if err != nil {
-		return err
+		log.Fatal(err)
 	}
+
+	wg := NewLimitedWaitGroup(maxRequests)
 
 	for i, img := range genSequence(start, end, region, resolution) {
 
-		log.WithField("Name", img).Info("Downloading image...")
+		wg.Add(1)
+		go func(img, dir string, i int, wg *LimitedWaitGroup) {
 
-		resp, err := http.Get(baseUrl + img)
-		if err != nil {
-			return err
-		}
+			defer wg.Done()
 
-		if resp.StatusCode != http.StatusOK {
-			log.Error("Bad http response: " + resp.Status + " (" + img + ")")
-		}
+			resp, err := http.Get(baseUrl + img)
+			if err != nil {
+				log.Error(err)
+				return
+			}
 
-		buf, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
+			if resp.StatusCode != http.StatusOK {
+				log.Error("Bad http response: " + resp.Status + " (" + img + ")")
+				return
+			} else {
+				log.WithField("Name", img).Info("Downloaded image")
+			}
 
-		var filename string
-		if ffmpeg {
-			filename = path.Join(dir, fmt.Sprintf("%05d.png", i))
-		} else {
-			filename = path.Join(dir, strconv.Itoa(i)+"_"+img)
-		}
+			buf, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Error(err)
+				return
+			}
 
-		f, err := os.Create(filename)
-		if err != nil {
-			return err
-		}
+			var filename string
+			if ffmpeg {
+				filename = path.Join(dir, fmt.Sprintf("%05d.png", i))
+			} else {
+				filename = path.Join(dir, strconv.Itoa(i)+"_"+img)
+			}
 
-		f.Write(buf)
+			f, err := os.Create(filename)
+			if err != nil {
+				log.Error(err)
+				return
+			}
 
-		f.Close()
+			f.Write(buf)
+			f.Close()
+		}(img, dir, i, wg)
 	}
-	return nil
+	wg.Wait()
 }
 
 func main() {
@@ -117,6 +162,7 @@ func main() {
 	var resolution = flag.Int("res", 5, "Time resolution. Use a multiple of 5, minimum 5!")
 
 	var ffmpeg = flag.Bool("ffmpeg-out", false, "Generate files in the form 00001.png")
+	var maxRequests = flag.Int("max-requests", 10, "Maximum of parallel http requests")
 
 	flag.Parse()
 
@@ -140,8 +186,5 @@ func main() {
 
 	fmt.Println(*outputDir)
 
-	err = downloadSequence(start, end, region, *resolution, *outputDir, *ffmpeg)
-	if err != nil {
-		log.Fatal(err)
-	}
+	downloadSequence(start, end, region, *resolution, *outputDir, *ffmpeg, *maxRequests)
 }
