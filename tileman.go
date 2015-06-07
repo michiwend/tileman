@@ -193,5 +193,8 @@ func main() {
 
 	fmt.Println(*outputDir)
 
+	now := time.Now()
 	downloadSequence(start, end, region, *resolution, *outputDir, *ffmpeg, *maxRequests)
+	t := time.Since(now)
+	log.Infof("Finished in %d minutes and %d seconds.", int(t.Minutes()), int(t.Seconds()))
 }
